@@ -1,0 +1,680 @@
+/* ------------------------------------------------------------------
+   Tokens
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #000000;
+  --surface: #0a1218; /* bubbles and composer: a blue-black, so it reads as glass on black */
+  --line: #1d2a33;
+  --text: #eef2f4;
+  --muted: #94a0aa; /* 7.6:1 on black */
+  --cyan: #3cd7ff;
+  --cyan-deep: #0aa6d6;
+  --cyan-glow: rgba(60, 215, 255, 0.22);
+  --cyan-hover: #6ee2ff;
+  --on-cyan: #00131a; /* text on a cyan fill */
+  --accent: #3cd7ff; /* cyan used as text, icon or outline: must read on --bg */
+  --wash: rgba(60, 215, 255, 0.07);
+  --chip-bg: rgba(10, 18, 24, 0.7);
+  --bubble-line: rgba(60, 215, 255, 0.28);
+  --send-off-bg: #16232c;
+  --send-off-ink: #5d6b75;
+  --strong: #ffffff;
+  --code-bg: #0f1d26;
+  --pre-bg: #050c10;
+  --error-line: #5a2a2a;
+  --error-bg: #140808;
+  color-scheme: dark;
+
+  --font: var(--font-geist), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Type scale: 16px base, ratio 1.25 */
+  --t-sm: 0.875rem;
+  --t-base: 1rem;
+  --t-md: 1.125rem;
+  --t-lg: 1.25rem;
+  --t-display: clamp(2.5rem, 4.2vw + 1rem, 4rem);
+
+  /* Radius scale: two steps only */
+  --r-pill: 999px;
+  --r-box: 22px;
+
+  --wrap: 760px;
+  --gutter: clamp(16px, 4vw, 32px);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light: a cool paper white (not cream), the same cyan for fills, a deep cyan for text */
+:root[data-theme='light'] {
+  --bg: #f5f8fa;
+  --surface: #ffffff;
+  --line: #d3dde4;
+  --text: #0c1b23;
+  --muted: #52616c; /* 6.1:1 on --bg */
+  --cyan-glow: rgba(10, 166, 214, 0.25);
+  --accent: #0a6f94; /* 5.4:1 on --bg, 5.7:1 on white */
+  --wash: rgba(60, 215, 255, 0.16);
+  --chip-bg: rgba(255, 255, 255, 0.78);
+  --bubble-line: rgba(10, 166, 214, 0.38);
+  --send-off-bg: #e3eaef;
+  --send-off-ink: #7f8e99;
+  --strong: #000000;
+  --code-bg: #e8f0f4;
+  --pre-bg: #eef3f6;
+  --error-line: #e3b2b2;
+  --error-bg: #fdf1f1;
+  color-scheme: light;
+}
+
+.icon-sun,
+:root[data-theme='light'] .icon-moon {
+  display: block;
+}
+.icon-moon,
+:root[data-theme='light'] .icon-sun {
+  display: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--t-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: fixed;
+  left: var(--gutter);
+  top: 12px;
+  z-index: 50;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  background: var(--cyan);
+  color: var(--on-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+.skip:focus-visible {
+  transform: none;
+}
+
+/* ------------------------------------------------------------------
+   Frame: header / stage / dock in one viewport-high column
+   ------------------------------------------------------------------ */
+.app {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr); /* stops the chip row from widening the page */
+  /* faint cyan light from below the avatar, nothing more */
+  background: radial-gradient(60% 45% at 50% 38%, var(--wash), transparent 70%), var(--bg);
+  position: relative;
+  isolation: isolate; /* the liquid canvas sits above this ground, below the content */
+}
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--wrap) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.top {
+  max-width: calc(1120px + 2 * var(--gutter));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 16px;
+}
+
+.name {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Liquid cursor: fixed canvas between the ground and the content */
+.liquid {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(8px); /* melts the half-resolution droplets together */
+}
+.app > :not(.liquid, .skip) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------------
+   Buttons: one primary, one ghost, one icon button
+   ------------------------------------------------------------------ */
+.btn,
+.icon-btn,
+.chip,
+.send {
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.btn-primary {
+  background: var(--cyan);
+  color: var(--on-cyan);
+}
+.btn-primary:hover {
+  background: var(--cyan-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--cyan-glow);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.btn:active,
+.icon-btn:active,
+.chip:active,
+.send:active {
+  transform: scale(0.97);
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}
+.icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------
+   Intro: the avatar alone on the first screen
+   ------------------------------------------------------------------ */
+.intro {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-block: 8px 40px;
+}
+
+.intro-avatar {
+  margin-bottom: 8px;
+}
+
+.avatar {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #6c6e73; /* the video's own grey, so nothing flashes before the frame loads */
+  box-shadow: 0 0 0 1px rgba(60, 215, 255, 0.3), 0 0 28px rgba(60, 215, 255, 0.12);
+  isolation: isolate;
+}
+.avatar-head {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.06);
+  will-change: transform;
+}
+.avatar-head img,
+.avatar-head canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--t-display);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: wave 2.2s var(--ease) 0.9s 1 both;
+}
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.lede {
+  margin: 14px 0 0;
+  font-size: var(--t-lg);
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 36px;
+  max-width: 640px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--chip-bg);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+.chip svg {
+  color: var(--accent);
+  flex: none;
+}
+.chip:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(60, 215, 255, 0.55);
+  box-shadow: 0 8px 24px rgba(60, 215, 255, 0.1);
+}
+.chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.intro-composer {
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* ------------------------------------------------------------------
+   Composer
+   ------------------------------------------------------------------ */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px 8px 20px;
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  text-align: left;
+}
+.composer:focus-within {
+  border-color: rgba(60, 215, 255, 0.6);
+  box-shadow: 0 0 0 4px rgba(60, 215, 255, 0.1), 0 10px 40px rgba(60, 215, 255, 0.08);
+}
+.composer textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 168px;
+  padding: 8px 0 10px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  font-size: var(--t-base);
+  line-height: 1.5;
+}
+.composer textarea::placeholder {
+  color: var(--muted);
+}
+.composer textarea:focus-visible {
+  outline: none;
+}
+
+.send {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--cyan);
+  color: var(--on-cyan);
+}
+.send:hover:not(:disabled) {
+  background: var(--cyan-hover);
+  transform: translateY(-1px);
+}
+.send:disabled {
+  background: var(--send-off-bg);
+  color: var(--send-off-ink);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------
+   Thread
+   ------------------------------------------------------------------ */
+.thread {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-block: 8px 24px;
+}
+
+.thread-avatar {
+  margin-bottom: 12px;
+}
+
+.messages {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.msg {
+  display: flex;
+  max-width: 100%;
+}
+
+/* The visitor: left, plain text */
+.msg-user {
+  justify-content: flex-start;
+}
+.msg-user p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: var(--t-md);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Gerald's avatar: right, a bubble with a cyan edge light */
+.msg-avatar {
+  justify-content: flex-end;
+}
+.bubble {
+  max-width: min(88%, 62ch);
+  padding: 14px 18px;
+  border-radius: var(--r-box);
+  border-top-right-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--bubble-line);
+  box-shadow: 0 0 0 1px rgba(60, 215, 255, 0.04), 0 0 28px rgba(60, 215, 255, 0.1);
+  overflow-wrap: anywhere;
+}
+
+.typing {
+  display: flex;
+  gap: 6px;
+  padding: 18px 20px;
+}
+.typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Markdown inside replies */
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose > :last-child {
+  margin-bottom: 0;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 0.75em;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.2em;
+}
+.prose li + li {
+  margin-top: 0.3em;
+}
+.prose li::marker {
+  color: var(--accent);
+}
+.prose strong {
+  font-weight: 600;
+  color: var(--strong);
+}
+.prose h2,
+.prose h3 {
+  margin: 1em 0 0.4em;
+  font-size: var(--t-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.prose code {
+  font-size: 0.9em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  background: var(--code-bg);
+}
+.prose pre {
+  margin: 0 0 0.75em;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--pre-bg);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+}
+.prose pre code {
+  padding: 0;
+  background: none;
+}
+.prose table {
+  width: 100%;
+  margin: 0 0 0.75em;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+.prose th,
+.prose td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+/* Links draw their underline on hover */
+.prose a,
+.msg-error a {
+  color: var(--accent);
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  transition: background-size 0.25s var(--ease);
+}
+.prose a:hover,
+.msg-error a:hover {
+  background-size: 0 1px;
+  background-position: 100% 100%;
+}
+
+.msg-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--r-box);
+  border: 1px solid var(--error-line);
+  background: var(--error-bg);
+}
+.msg-error p {
+  margin: 0;
+  flex: 1 1 280px;
+}
+
+/* ------------------------------------------------------------------
+   Dock: follow-up chips and composer pinned under the thread
+   ------------------------------------------------------------------ */
+.dock {
+  padding-block: 6px max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+.chips-compact {
+  justify-content: flex-start;
+  margin: 0 0 10px;
+  max-width: none;
+}
+.chips-compact .chip {
+  font-size: 0.8125rem;
+}
+
+/* ------------------------------------------------------------------
+   Small screens
+   ------------------------------------------------------------------ */
+@media (max-width: 600px) {
+  .top .btn span {
+    display: none;
+  }
+  .top .btn {
+    width: 44px;
+    padding: 0;
+  }
+  .intro .avatar {
+    width: 168px !important;
+    height: 168px !important;
+  }
+  .lede {
+    font-size: var(--t-md);
+  }
+  .chips {
+    margin-top: 28px;
+  }
+  .intro .chip {
+    width: 100%;
+    justify-content: center;
+  }
+  .chips-compact {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+  }
+  .chips-compact .chip {
+    flex: none;
+  }
+  .bubble {
+    max-width: 94%;
+  }
+  .thread-avatar .avatar {
+    width: 80px !important;
+    height: 80px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
